@@ -1,14 +1,30 @@
-import NewsService from '../services/newsService';
-import * as HttpStatus from 'http-status';
+import NewsService from '../services/newsService'
+import * as HttpStatus from 'http-status'
 import Helper from '../infra/helper'
+import * as redis from 'redis'
 
 class NewsController{   
 
     get(req, res){
-        console.log("teste");
-         NewsService.get()
-        .then(news => Helper.sendResponse(res, HttpStatus.OK, news))
-        .catch(error => console.error.bind(console, `Error ${error}`));
+        // let client = redis.createClient(6378, "localhost");  //local docker -foi mepeado 6378:6379 no redis-portalnews
+        //let client = redis.createClient(6379, "localhost");  //local maquina
+        let client = redis.createClient(6379, "redis");  //com compose (nuvem)
+        client.get('news', function(err, reply){
+            if(reply){
+                console.log("foi no redis");
+                Helper.sendResponse(res, HttpStatus.OK, JSON.parse(reply));
+            }else{
+                console.log("foi no mongo");
+                NewsService.get()
+                .then(news => {
+                    client.set('news', JSON.stringify(news))
+                    client.expire('news', 20);
+                    Helper.sendResponse(res, HttpStatus.OK, news)
+                })
+                .catch(error => console.error.bind(console, `Error ${error}`));
+            }
+        })
+        
     }
 
     getById(req, res){

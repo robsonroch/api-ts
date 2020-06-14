@@ -1,15 +1,17 @@
 version: "3"
 services:
   api_dev:
-    image: robsonroch/api-ts
+    image: robsonroch/api-ts:redis
     ports:
-      - "5000:3050"
+      - "3050:3050"
     links:
       - link-db
   link-db:
     image: tutum/mongodb
     ports:
-      - "27010:27010"
+      - "27017:27017"
       - "28017:28017"
     environment:
       - AUTH=no
+  redis:
+    image: "redis"
